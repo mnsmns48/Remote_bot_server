@@ -1,4 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 user_first_kb = ReplyKeyboardMarkup(resize_keyboard=True,
                                     one_time_keyboard=False,
@@ -29,3 +30,4 @@ catalog_brand_phones_kb = ReplyKeyboardMarkup(resize_keyboard=True,
                                                   [KeyboardButton(text='Полный список смартфонов')],
                                                   [KeyboardButton(text='Перейти в начало')]
                                               ])
+

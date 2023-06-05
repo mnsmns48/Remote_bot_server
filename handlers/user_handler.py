@@ -1,9 +1,12 @@
 from aiogram import Router, F
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
 from config import bot, hidden_vars as hv
 
 from db_pg_work import user_spotted, get_full_list
+from db_tables import avail
 from keyboards.user_k import user_first_kb, catalog_full_kb, catalog_brand_phones_kb
 
 user_ = Router()
@@ -39,8 +42,28 @@ async def catalog_phones(m: Message):
 
 
 async def phones_full_catalog(m: Message):
-    text = get_full_list('Смартфон')
-    await m.answer(text)
+    res = '--- В наличии:\n'
+    response = get_full_list(type_=avail.c.type_,
+                             ty_l=['Смартфон'],
+                             brand=avail.c.type_,
+                             br_l=['Смартфон'])
+    for line in response:
+        res += ''.join(f"{line[0]} - {line[2]} руб")
+        res += '\n'
+    await m.answer(res)
+
+
+async def phones_brand_avail(m: Message):
+    kb = InlineKeyboardBuilder()
+    brand_l = m.text.split(' / ')
+    response = get_full_list(type_=avail.c.type_,
+                             ty_l=['Смартфон'],
+                             brand=avail.c.brand,
+                             br_l=brand_l)
+    for line in response:
+        kb.row(InlineKeyboardButton(
+            text=f"{line[2]} {line[0]}", callback_data=line[0]))
+    await m.answer('Что есть в наличии:', reply_markup=kb.as_markup())
 
 
 def register_user_handlers():
@@ -48,3 +71,11 @@ def register_user_handlers():
     user_.message.register(catalog_all, F.text == 'В наличии')
     user_.message.register(catalog_phones, F.text == 'Смартфоны')
     user_.message.register(phones_full_catalog, F.text == "Полный список смартфонов")
+    user_.message.register(phones_brand_avail, F.text.in_({
+        'Xiaomi / Redmi / Poco',
+        'Realme / Oppo / OnePlus',
+        'Huawei / Honor',
+        'Samsung',
+        'Tecno / Infinix',
+        'TCL'
+    }))
