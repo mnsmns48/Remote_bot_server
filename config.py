@@ -1,4 +1,8 @@
 import logging
+from datetime import datetime
+
+import pytz
+from sqlalchemy import Table
 from yadisk import YaDisk
 
 from aiogram.fsm.storage.redis import RedisStorage
@@ -7,6 +11,8 @@ from dataclasses import dataclass
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
+
+from db_tables import optmobex_xiaomi_table, optmobex_apple_table, optmobex_samsung_table
 
 
 @dataclass
@@ -78,3 +84,30 @@ def month_conv(m: str) -> str:
     return f"{month.get(m.split('-')[1])} {m.split('-')[0]}"
 
 
+def price_def(s: str) -> Table:
+    temp_dict = {
+        'Xiaomi под заказ': optmobex_xiaomi_table,
+        'Samsung под заказ': optmobex_samsung_table,
+        'Apple под заказ': optmobex_apple_table
+    }
+    return temp_dict.get(s)
+
+
+def get_date_from_db(response):
+    date = response.split('T')[0]
+    time = response.split('T')[1]
+    old_format_date = datetime.strptime(date, '%Y-%m-%d')
+    result = old_format_date.strftime('%d-%m-%Y')
+    return str(result) + ' в ' + time
+
+
+def title_formatting(price, name):
+    del_list = list()
+    if price == 'optmobex_xiaomi':
+        del_list = ['EU ', 'Xiaomi ', 'CN', ' RU/СТБ', ' RU']
+    if price == 'optmobex_samsung':
+        del_list = ['Samsung Galaxy', 'AE', 'AH', 'KZ', 'EU', 'CN',
+                    'IN', ',', 'Simfree', 'RU', 'ZA', '   ', 'TH', '/']
+    for i in del_list:
+        name = name.replace(i, '')
+    return name

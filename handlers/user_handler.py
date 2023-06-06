@@ -1,13 +1,15 @@
+import time
+
 from aiogram import Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, InlineKeyboardButton, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from config import bot, hidden_vars as hv
+from config import bot, hidden_vars as hv, price_def, get_date_from_db, title_formatting
 
-from db_pg_work import user_spotted, get_full_list, get_goods_desc
+from db_pg_work import user_spotted, get_full_list, get_goods_desc, get_price_on_server
 from db_tables import avail
-from keyboards.user_k import user_first_kb, catalog_full_kb, catalog_brand_phones_kb
+from keyboards.user_k import user_first_kb, catalog_full_kb, catalog_brand_phones_kb, catalog_order_kb
 
 user_ = Router()
 
@@ -96,8 +98,31 @@ async def show_product(c: CallbackQuery):
     if response.get('full_desc'):
         text += response.get('full_desc')
     photo = response.get('link')
-    print(len(text))
     await c.message.answer_photo(photo=photo, caption=text)
+
+
+async def items_order(m: Message):
+    await m.answer(text='Товары под заказ доставляются\nот 1-го до 7-ми дней', reply_markup=catalog_order_kb)
+
+
+async def display_order_list(m: Message):
+    response = get_price_on_server(price_def(m.text))
+    temp_list_ = list()
+    for line in response:
+        if response[0][0] in line:
+            temp_list_.append(line)
+    update_text = f'Цены обновлены {get_date_from_db(response[0][0])}\nи будут актуальны 1-3 дня'
+    mess = update_text + '\n\n↓ ↓ ↓ ↓ \n' + \
+           title_formatting(str(price_def(m.text)), ''.join(item[1] + ' ' + str(item[2]) + '\n' for item in temp_list_))
+    if len(mess) > 4096:
+        for i in range(0, len(mess), 4096):
+            part_mess = mess[i: i + 4096]
+            await m.answer(part_mess)
+            time.sleep(1)
+    else:
+        await m.answer(mess)
+    await m.answer('ВНИМАНИЕ, смотрите на дату обновления цен в начале сообщения\n'
+                   'По любым вопросам обращайтесь\n@tser88 или @cifrotech_mobile')
 
 
 def register_user_handlers():
@@ -121,3 +146,5 @@ def register_user_handlers():
         'Кнопочные телефоны',
         'PowerBanks'
     }))
+    user_.message.register(items_order, F.text == "Под заказ")
+    user_.message.register(display_order_list, F.text.contains(' под заказ'))

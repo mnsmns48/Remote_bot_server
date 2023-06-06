@@ -1,6 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-
 user_first_kb = ReplyKeyboardMarkup(resize_keyboard=True,
                                     one_time_keyboard=False,
                                     keyboard=[
@@ -31,3 +30,11 @@ catalog_brand_phones_kb = ReplyKeyboardMarkup(resize_keyboard=True,
                                                   [KeyboardButton(text='Перейти в начало')]
                                               ])
 
+catalog_order_kb = ReplyKeyboardMarkup(resize_keyboard=True,
+                                       one_time_keyboard=False,
+                                       keyboard=[
+                                           [KeyboardButton(text='Apple под заказ')],
+                                           [KeyboardButton(text='Xiaomi под заказ')],
+                                           [KeyboardButton(text='Samsung под заказ')],
+                                           [KeyboardButton(text='Перейти в начало')],
+                                       ])
