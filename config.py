@@ -1,4 +1,5 @@
 import logging
+from yadisk import YaDisk
 
 from aiogram.fsm.storage.redis import RedisStorage
 from environs import Env
@@ -45,6 +46,7 @@ hidden_vars = load_config('..env')
 storage = RedisStorage.from_url('redis://@localhost:6379/0')
 bot = Bot(token=hidden_vars.bot_token)
 dp = Dispatcher()
+y = YaDisk(token=hidden_vars.yatoken)
 
 commands = [
     BotCommand(
@@ -56,5 +58,23 @@ commands = [
         description='Написать админу'
     )
 ]
+
+
+def month_conv(m: str) -> str:
+    month = {
+        '01': 'Январь',
+        '02': 'Февраль',
+        '03': 'Март',
+        '04': 'Апрель',
+        '05': 'Май',
+        '06': 'Июнь',
+        '07': 'Июль',
+        '08': 'Август',
+        '09': 'Сентябрь',
+        '10': 'Октябрь',
+        '11': 'Ноябрь',
+        '12': 'Декабрь'
+    }
+    return f"{month.get(m.split('-')[1])} {m.split('-')[0]}"
 
 

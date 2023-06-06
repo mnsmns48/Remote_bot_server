@@ -5,7 +5,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from config import bot, hidden_vars as hv
 
-from db_pg_work import user_spotted, get_full_list
+from db_pg_work import user_spotted, get_full_list, get_goods_desc
 from db_tables import avail
 from keyboards.user_k import user_first_kb, catalog_full_kb, catalog_brand_phones_kb
 
@@ -64,7 +64,7 @@ async def phones_brand_avail(m: Message):
         for line in response:
             kb.row(InlineKeyboardButton(
                 text=f"{line[2]} {line[0].split(' ', maxsplit=1)[1]}",
-                callback_data=line[0].split(' ', maxsplit=1)[1]))
+                callback_data=line[3]))
         await m.answer('Что есть в наличии:', reply_markup=kb.as_markup())
     else:
         await m.answer('Нет в наличии')
@@ -84,14 +84,20 @@ async def show_other_position(m: Message):
         for line in response:
             kb.row(InlineKeyboardButton(
                 text=f"{line[2]} {line[0].split(' ', maxsplit=1)[1]}",
-                callback_data=line[0].split(' ', maxsplit=1)[1]))
+                callback_data=line[3]))
         await m.answer('Что есть в наличии:', reply_markup=kb.as_markup())
     else:
         await m.answer('Нет в наличии')
 
 
 async def show_product(c: CallbackQuery):
-    print(c.data)
+    response = get_goods_desc(c.data)
+    text = f"{response.get('product_name')}\n{response.get('price')}\nв наличии {response.get('quantity')}\n\n"
+    if response.get('full_desc'):
+        text += response.get('full_desc')
+    photo = response.get('link')
+    print(len(text))
+    await c.message.answer_photo(photo=photo, caption=text)
 
 
 def register_user_handlers():
