@@ -7,7 +7,7 @@ from middleware import ThrottlingMiddleware
 
 
 async def bot_working():
-    dp.message.middleware.register(ThrottlingMiddleware(storage=storage))
+    # dp.message.middleware.register(ThrottlingMiddleware(storage=storage))
     register_admin_handlers()
     register_user_handlers()
     dp.include_routers(admin_, user_)

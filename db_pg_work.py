@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
+from typing import Sequence
 
-from sqlalchemy import create_engine, select, func, insert, desc
+from sqlalchemy import create_engine, select, func, insert, desc, Column, Row
+from sqlalchemy.engine.result import _TP
 
 from config import hidden_vars as hv
 from sshtunnel import SSHTunnelForwarder
@@ -23,7 +25,7 @@ def get_today_activity() -> str:
                                echo=False)
         conn = engine.connect()
         today = datetime.now().date()
-        sample = select(activity).filter(func.DATE(activity.c.time_) == today)
+        sample = select(activity).filter(func.DATE(activity.c.time_) == today).order_by(activity.c.time_)
         response = conn.execute(sample).fetchall()
         conn.close()
     for line in response:
@@ -109,8 +111,7 @@ def take_last_guests() -> str:
         return res
 
 
-def get_full_list(type: str) -> str:
-    res = '--- В наличии:\n'
+def get_full_list(type_: Column, ty_l: list, brand: Column, br_l: list) -> Sequence[Row[_TP]]:
     with SSHTunnelForwarder(
             (hv.ssh_host, 22),
             ssh_username=hv.ssh_username,
@@ -122,12 +123,12 @@ def get_full_list(type: str) -> str:
         engine = create_engine(f"postgresql://{hv.server_db_username_server}:{hv.server_db_password_server}"
                                f"@localhost:{local_port}/activity_server",
                                echo=False)
+    # engine = create_engine(f"postgresql://baza:{hv.server_db_password_server}"
+    #                        f"@localhost:5432/activity_client")
         conn = engine.connect()
-        sample = select(avail.c.product, avail.c.quantity, avail.c.price) \
-            .where(avail.c.type_ == type).order_by(avail.c.price).order_by(avail.c.brand)
+        sample = select(avail.c.product, avail.c.quantity, avail.c.price).where(type_.in_(ty_l))\
+            .where(brand.in_(br_l)).order_by(avail.c.price).order_by(avail.c.brand)
         response = conn.execute(sample).fetchall()
         conn.close()
-        for line in response:
-            res += ''.join(f"{line[0]} - {line[2]} руб")
-            res += '\n'
-        return res
+        return response
+
