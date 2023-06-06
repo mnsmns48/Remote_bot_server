@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.filters import CommandStart
-from aiogram.types import Message, InlineKeyboardButton
+from aiogram.types import Message, InlineKeyboardButton, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from config import bot, hidden_vars as hv
@@ -44,11 +44,11 @@ async def catalog_phones(m: Message):
 async def phones_full_catalog(m: Message):
     res = '--- В наличии:\n'
     response = get_full_list(type_=avail.c.type_,
-                             ty_l=['Смартфон'],
+                             ty_l=['Смартфоны'],
                              brand=avail.c.type_,
-                             br_l=['Смартфон'])
+                             br_l=['Смартфоны'])
     for line in response:
-        res += ''.join(f"{line[0]} - {line[2]} руб")
+        res += ''.join(f"{line[0].split(' ', maxsplit=1)[1]} - {line[2]} руб")
         res += '\n'
     await m.answer(res)
 
@@ -57,17 +57,47 @@ async def phones_brand_avail(m: Message):
     kb = InlineKeyboardBuilder()
     brand_l = m.text.split(' / ')
     response = get_full_list(type_=avail.c.type_,
-                             ty_l=['Смартфон'],
+                             ty_l=['Смартфоны'],
                              brand=avail.c.brand,
                              br_l=brand_l)
-    for line in response:
-        kb.row(InlineKeyboardButton(
-            text=f"{line[2]} {line[0]}", callback_data=line[0]))
-    await m.answer('Что есть в наличии:', reply_markup=kb.as_markup())
+    if response:
+        for line in response:
+            kb.row(InlineKeyboardButton(
+                text=f"{line[2]} {line[0].split(' ', maxsplit=1)[1]}",
+                callback_data=line[0].split(' ', maxsplit=1)[1]))
+        await m.answer('Что есть в наличии:', reply_markup=kb.as_markup())
+    else:
+        await m.answer('Нет в наличии')
+
+
+async def begin(m: Message):
+    await m.answer('Выбери категорию', reply_markup=user_first_kb)
+
+
+async def show_other_position(m: Message):
+    kb = InlineKeyboardBuilder()
+    response = get_full_list(type_=avail.c.type_,
+                             ty_l=[m.text],
+                             brand=avail.c.type_,
+                             br_l=[m.text])
+    if response:
+        for line in response:
+            kb.row(InlineKeyboardButton(
+                text=f"{line[2]} {line[0].split(' ', maxsplit=1)[1]}",
+                callback_data=line[0].split(' ', maxsplit=1)[1]))
+        await m.answer('Что есть в наличии:', reply_markup=kb.as_markup())
+    else:
+        await m.answer('Нет в наличии')
+
+
+async def show_product(c: CallbackQuery):
+    print(c.data)
 
 
 def register_user_handlers():
+    user_.callback_query.register(show_product)
     user_.message.register(start, CommandStart())
+    user_.message.register(begin, F.text == 'Перейти в начало')
     user_.message.register(catalog_all, F.text == 'В наличии')
     user_.message.register(catalog_phones, F.text == 'Смартфоны')
     user_.message.register(phones_full_catalog, F.text == "Полный список смартфонов")
@@ -78,4 +108,10 @@ def register_user_handlers():
         'Samsung',
         'Tecno / Infinix',
         'TCL'
+    }))
+    user_.message.register(show_other_position, F.text.in_({
+        'Планшеты',
+        'Умные часы',
+        'Кнопочные телефоны',
+        'PowerBanks'
     }))

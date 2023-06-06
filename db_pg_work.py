@@ -25,7 +25,7 @@ def get_today_activity() -> str:
                                echo=False)
         conn = engine.connect()
         today = datetime.now().date()
-        sample = select(activity).filter(func.DATE(activity.c.time_) == today)
+        sample = select(activity).filter(func.DATE(activity.c.time_) == today).order_by(activity.c.time_)
         response = conn.execute(sample).fetchall()
         conn.close()
     for line in response:
