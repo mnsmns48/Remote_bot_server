@@ -111,3 +111,15 @@ def title_formatting(price, name):
     for i in del_list:
         name = name.replace(i, '')
     return name
+
+
+def resolution_conv(r: str) -> str:
+    return f"{r.split(' x ')[1]}x{r.split(' x ')[0]}"
+
+
+def date_out(date: str) -> str:
+    m_date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S%z")
+    tz = pytz.timezone("Etc/GMT-3")
+    m_date_utc3 = tz.normalize(m_date.astimezone(tz))
+    out_date = m_date_utc3.strftime("%Y-%m-%d %H:%M:%S")
+    return out_date

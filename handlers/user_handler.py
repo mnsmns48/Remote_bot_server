@@ -64,9 +64,15 @@ async def phones_brand_avail(m: Message):
                              br_l=brand_l)
     if response:
         for line in response:
-            kb.row(InlineKeyboardButton(
-                text=f"{line[2]} {line[0].split(' ', maxsplit=1)[1]}",
-                callback_data=line[3]))
+            x_m = line[0].split(' ', maxsplit=2)[1]
+            if x_m == 'Xiaomi' or x_m == 'Samsung':
+                kb.row(InlineKeyboardButton(
+                    text=f"{line[2]} {line[0].split(' ', maxsplit=2)[2]}",
+                    callback_data=line[3]))
+            else:
+                kb.row(InlineKeyboardButton(
+                    text=f"{line[2]} {line[0].split(' ', maxsplit=1)[1]}",
+                    callback_data=line[3]))
         await m.answer('Что есть в наличии:', reply_markup=kb.as_markup())
     else:
         await m.answer('Нет в наличии')

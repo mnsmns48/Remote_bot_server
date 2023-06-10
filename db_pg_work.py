@@ -4,7 +4,7 @@ from typing import Sequence, Any
 from sqlalchemy import create_engine, select, func, insert, desc, Column, Row, Table
 from sqlalchemy.engine.result import _TP
 
-from config import hidden_vars as hv, y, month_conv
+from config import hidden_vars as hv, y, month_conv, resolution_conv, date_out
 
 from db_tables import activity, guests, avail, s_main, display, energy, camera, performance
 
@@ -56,7 +56,7 @@ def get_today_activity() -> str:
 
 def user_spotted(time_: datetime, id_: int, fullname: str, username: str) -> None:
     insert_data = {
-        'time_': str(time_).split('+')[0],
+        'time_': date_out(str(time_)),
         'id_': id_,
         'fullname': fullname,
         'username': username
@@ -74,7 +74,7 @@ def take_last_guests() -> str:
     engine = create_engine(f"postgresql://{hv.server_db_username_server}:{hv.server_db_password_server}"
                            f"@{hv.remote_bind_address_host}:{hv.remote_bind_address_port}/activity_server")
     conn = engine.connect()
-    sample = select(guests).order_by(desc(guests.c.time_)).limit(2)
+    sample = select(guests).order_by(desc(guests.c.time_)).limit(10)
     response = conn.execute(sample).fetchall()
     conn.close()
     for line in response:
@@ -94,10 +94,6 @@ def get_full_list(type_: Column, ty_l: list, brand: Column, br_l: list) -> Seque
     return response
 
 
-def resolution_conv(param):
-    pass
-
-
 def get_goods_desc(g_desc: str) -> dict:
     engine = create_engine(f"postgresql://{hv.server_db_username_server}:{hv.server_db_password_server}"
                            f"@{hv.remote_bind_address_host}:{hv.remote_bind_address_port}/activity_server")
@@ -114,7 +110,7 @@ def get_goods_desc(g_desc: str) -> dict:
     model_for_link = response[3].rsplit(' ', maxsplit=2)[0].split(' ', maxsplit=1)[1]
     if response[0] == 'Смартфоны':
         engine2 = create_engine(f"postgresql://{hv.server_db_username_server}:{hv.server_db_password_server}"
-                               f"@{hv.remote_bind_address_host}:{hv.remote_bind_address_port}/phones")
+                                f"@{hv.remote_bind_address_host}:{hv.remote_bind_address_port}/phones")
         conn2 = engine2.connect()
         sample = select(
             s_main.c.title,
@@ -156,7 +152,8 @@ def get_goods_desc(g_desc: str) -> dict:
                     'full_desc':
                         f"Дата выхода: {month_conv(description[1])}\n"
                         f"Класс: {description[2]}\n"
-                        f"Дисплей: {description[3]} {description[4]} {description[6]} {description[5]} Hz\n"
+                        f"Дисплей: {description[3]} {description[4]} "
+                        f"{resolution_conv(description[6])} {description[5]} Hz\n"
                         f"АКБ: {description[7]}, мощность заряда: {int(description[8])} W\n"
                         f"Быстрая зарядка: {description[9]}\n"
                         f"Основные камеры: {description[10]}\n"
